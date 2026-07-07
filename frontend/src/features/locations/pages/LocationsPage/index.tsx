@@ -28,6 +28,7 @@ import {
   type LocationFormMode,
   type LocationFormValues,
 } from '../../components/LocationFormModal'
+import { LocationDetailsModal } from '../../components/LocationDetailsModal'
 import { LocationRemoveModal } from '../../components/LocationRemoveModal'
 import {
   LocationStatusModal,
@@ -35,6 +36,9 @@ import {
 } from '../../components/LocationStatusModal'
 import { useCreateLocation } from '../../hooks/useCreateLocation'
 import { useDeleteLocation } from '../../hooks/useDeleteLocation'
+import { useLocationDetails } from '../../hooks/useLocationDetails'
+import { useLocationEquipment } from '../../hooks/useLocationEquipment'
+import { useLocationHistory } from '../../hooks/useLocationHistory'
 import { useLocationList } from '../../hooks/useLocationList'
 import { useLocationSummary } from '../../hooks/useLocationSummary'
 import { useUpdateLocation } from '../../hooks/useUpdateLocation'
@@ -257,6 +261,7 @@ export function LocationsPage() {
   const [locationInForm, setLocationInForm] = useState<LocationDetails>()
   const [locationToRemove, setLocationToRemove] = useState<LocationDetails>()
   const [locationInStatus, setLocationInStatus] = useState<LocationDetails>()
+  const [locationInDetails, setLocationInDetails] = useState<LocationDetails>()
 
   const createLocation = useCreateLocation()
   const updateLocation = useUpdateLocation()
@@ -281,21 +286,28 @@ export function LocationsPage() {
   })
 
   const locationSummaryQuery = useLocationSummary()
+  const locationDetailsQuery = useLocationDetails(locationInDetails?.id)
+  const locationEquipmentQuery = useLocationEquipment(locationInDetails?.id, {
+    page: 1,
+    pageSize: 10,
+  })
+  const locationHistoryQuery = useLocationHistory(locationInDetails?.id, {
+    page: 1,
+    pageSize: 10,
+  })
 
   const locations = locationListQuery.data?.data ?? []
   const paginationInfo = locationListQuery.data?.meta
   const summary = locationSummaryQuery.data ?? emptySummary
   const summaryCards = buildLocationSummaryCards(summary)
+  const detailsLocation = locationDetailsQuery.data ?? locationInDetails
+  const locationEquipments = locationEquipmentQuery.data?.data ?? []
+  const locationHistory = locationHistoryQuery.data?.data ?? []
   const isLoading = locationListQuery.isLoading || locationSummaryQuery.isLoading
   const isSavingForm = createLocation.isLoading || updateLocation.isLoading
   const loadError =
     locationListQuery.errorMessage || locationSummaryQuery.errorMessage
 
-  function handlePendingLocationFeature(featureName: string) {
-    messageApi.info(
-      `${featureName} deve ser implementado no trabalho final de Localizações.`,
-    )
-  }
 
   function handleClearFilters() {
     setSearchText('')
@@ -391,6 +403,29 @@ export function LocationsPage() {
     }
   }
 
+  function handleViewLocation(location: LocationDetails) {
+    setLocationInDetails(location)
+  }
+
+  function handleCloseDetailsModal() {
+    setLocationInDetails(undefined)
+  }
+
+  function handleEditFromDetails(location: LocationDetails) {
+    handleCloseDetailsModal()
+    handleEditLocation(location)
+  }
+
+  function handleChangeStatusFromDetails(location: LocationDetails) {
+    handleCloseDetailsModal()
+    setLocationInStatus(location)
+  }
+
+  function handleRemoveFromDetails(location: LocationDetails) {
+    handleCloseDetailsModal()
+    setLocationToRemove(location)
+  }
+
   async function handleSubmitLocationStatus(values: LocationStatusFormValues) {
     if (!locationInStatus) {
       return
@@ -417,7 +452,7 @@ export function LocationsPage() {
     onChangeStatusLocation: setLocationInStatus,
     onEditLocation: handleEditLocation,
     onRemoveLocation: setLocationToRemove,
-    onViewLocation: () => handlePendingLocationFeature('Ver detalhes'),
+    onViewLocation: handleViewLocation,
   })
 
   return (
@@ -505,6 +540,27 @@ export function LocationsPage() {
           statusOptions={locationStatusOptions}
           onCancel={() => setLocationInStatus(undefined)}
           onSubmit={handleSubmitLocationStatus}
+        />
+
+        <LocationDetailsModal
+          location={detailsLocation}
+          equipments={locationEquipments}
+          history={locationHistory}
+          open={Boolean(locationInDetails)}
+          loading={
+            locationDetailsQuery.isLoading ||
+            locationEquipmentQuery.isLoading ||
+            locationHistoryQuery.isLoading
+          }
+          errorMessage={
+            locationDetailsQuery.errorMessage ||
+            locationEquipmentQuery.errorMessage ||
+            locationHistoryQuery.errorMessage
+          }
+          onCancel={handleCloseDetailsModal}
+          onEdit={handleEditFromDetails}
+          onChangeStatus={handleChangeStatusFromDetails}
+          onRemove={handleRemoveFromDetails}
         />
       </Container>
     </AppLayout>
