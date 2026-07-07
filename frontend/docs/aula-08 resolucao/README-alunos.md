@@ -173,7 +173,7 @@ Na tela `/locations/:locationId`, o ID vem da URL.
 Com esse ID, a tela busca:
 
 - os dados do local;
-- os equipamentos vinculados ao local.
+- os equipamentos vinculados ao local.s
 
 ```mermaid
 sequenceDiagram

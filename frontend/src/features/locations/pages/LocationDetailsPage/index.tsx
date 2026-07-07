@@ -216,7 +216,7 @@ export function LocationDetailsPage() {
       <Container>
         <LocationDetailsHeader
           location={location}
-          onBack={() => navigate('/locations')}
+          onBack={() => navigate("/locations")}
           onChangeStatus={handleChangeStatus}
           onEdit={handleEditLocation}
           onRemove={() => setLocationToRemove(location)}
@@ -232,16 +232,20 @@ export function LocationDetailsPage() {
             <LocationInfoCard location={location} />
           </MainColumn>
 
+          {/* */}
           <SideColumn>
             <LocationEquipmentCard
               equipment={linkedEquipment}
               errorMessage={equipmentQuery.errorMessage}
               loading={equipmentQuery.isLoading}
-              onViewEquipment={(equipment) => navigate(`/equipment/${equipment.id}`)}
+              onViewEquipment={(equipment) =>
+                navigate(`/equipment/${equipment.id}`)
+              }
             />
           </SideColumn>
         </ContentGrid>
 
+        {/* */}
         <DetailTextCard
           emptyText="Nenhuma descrição cadastrada."
           text={location.description}
@@ -277,5 +281,5 @@ export function LocationDetailsPage() {
         />
       </Container>
     </AppLayout>
-  )
+  );
 }
