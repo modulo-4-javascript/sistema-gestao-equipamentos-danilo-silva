@@ -29,11 +29,16 @@ import {
   type LocationFormValues,
 } from '../../components/LocationFormModal'
 import { LocationRemoveModal } from '../../components/LocationRemoveModal'
+import {
+  LocationStatusModal,
+  type LocationStatusFormValues,
+} from '../../components/LocationStatusModal'
 import { useCreateLocation } from '../../hooks/useCreateLocation'
 import { useDeleteLocation } from '../../hooks/useDeleteLocation'
 import { useLocationList } from '../../hooks/useLocationList'
 import { useLocationSummary } from '../../hooks/useLocationSummary'
 import { useUpdateLocation } from '../../hooks/useUpdateLocation'
+import { useUpdateLocationStatus } from '../../hooks/useUpdateLocationStatus'
 import {
   formatLocationDate,
   getLocationStatusLabel,
@@ -251,10 +256,12 @@ export function LocationsPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [locationInForm, setLocationInForm] = useState<LocationDetails>()
   const [locationToRemove, setLocationToRemove] = useState<LocationDetails>()
+  const [locationInStatus, setLocationInStatus] = useState<LocationDetails>()
 
   const createLocation = useCreateLocation()
   const updateLocation = useUpdateLocation()
   const deleteLocation = useDeleteLocation()
+  const updateLocationStatus = useUpdateLocationStatus()
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -384,8 +391,30 @@ export function LocationsPage() {
     }
   }
 
+  async function handleSubmitLocationStatus(values: LocationStatusFormValues) {
+    if (!locationInStatus) {
+      return
+    }
+
+    try {
+      await updateLocationStatus.updateStatus({
+        locationId: locationInStatus.id,
+        payload: {
+          status: values.status,
+          note: values.note?.trim() || null,
+        },
+      })
+
+      await Promise.all([locationListQuery.reload(), locationSummaryQuery.reload()])
+      messageApi.success('Status do local atualizado com sucesso.')
+      setLocationInStatus(undefined)
+    } catch (error) {
+      messageApi.error(getRequestErrorMessage(error))
+    }
+  }
+
   const locationColumns = getLocationColumns({
-    onChangeStatusLocation: () => handlePendingLocationFeature('Mudar situação'),
+    onChangeStatusLocation: setLocationInStatus,
     onEditLocation: handleEditLocation,
     onRemoveLocation: setLocationToRemove,
     onViewLocation: () => handlePendingLocationFeature('Ver detalhes'),
@@ -467,6 +496,15 @@ export function LocationsPage() {
           confirmLoading={deleteLocation.isLoading}
           onCancel={() => setLocationToRemove(undefined)}
           onConfirm={handleConfirmRemoveLocation}
+        />
+
+        <LocationStatusModal
+          location={locationInStatus}
+          open={Boolean(locationInStatus)}
+          confirmLoading={updateLocationStatus.isLoading}
+          statusOptions={locationStatusOptions}
+          onCancel={() => setLocationInStatus(undefined)}
+          onSubmit={handleSubmitLocationStatus}
         />
       </Container>
     </AppLayout>
